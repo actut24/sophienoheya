@@ -8,4 +8,4 @@ exclude = ["worker.js", "wrangler.toml"]
 
 [[kv_namespaces]]
 binding = "SOPHIE_DATA"
-id = "REPLACE_WITH_YOUR_KV_ID"
+id = "87847c0d3fde41f2b7f4273c3f98bbe6"
