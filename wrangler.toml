@@ -1,7 +1,0 @@
-name = "sophienoheya"
-main = "worker.js"
-compatibility_date = "2024-01-01"
-
-[[kv_namespaces]]
-binding = "SOPHIE_DATA"
-id = "87847c0d3fde41f2b7f4273c3f98bbe6"
