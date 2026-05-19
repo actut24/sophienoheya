@@ -50,11 +50,17 @@ async function doImport() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pw })
     });
-    const loginData = await loginRes.json();
+    log(`API 回應狀態：${loginRes.status}`);
+    const rawText = await loginRes.text();
+    log(`API 回應內容：${rawText}`);
+    let loginData;
+    try { loginData = JSON.parse(rawText); } catch(e) {
+      log('✗ API 回應不是 JSON，可能 worker.js 有問題', 'err');
+      btn.disabled = false; btn.textContent = '重新匯入'; return;
+    }
     if (!loginData.ok) {
       log('✗ 密碼錯誤', 'err');
-      btn.disabled = false; btn.textContent = '開始匯入（23 件作品）';
-      return;
+      btn.disabled = false; btn.textContent = '重新匯入'; return;
     }
     log('✓ 驗證成功', 'ok');
     log(`正在寫入 ${WORKS.length} 件作品...`);
@@ -69,10 +75,11 @@ async function doImport() {
       log('');
       log('現在可以關閉這個頁面，重新整理前台就會看到所有作品了 🎉', 'ok');
     } else {
-      log('✗ 寫入失敗，請再試一次', 'err');
+      log(`✗ 寫入失敗，狀態：${res.status}`, 'err');
     }
   } catch(e) {
     log('✗ 連線失敗：' + e.message, 'err');
+    log('請確認是從 workers.dev 網址打開，不是本地檔案', '');
   }
   btn.disabled = false;
   btn.textContent = '重新匯入';
