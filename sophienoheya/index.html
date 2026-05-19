@@ -243,12 +243,14 @@ section { padding: 120px 0; }
 
 /* stagger children */
 .stagger > * { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.stagger.visible > *:nth-child(1) { opacity:1; transform:none; transition-delay: 0s; }
-.stagger.visible > *:nth-child(2) { opacity:1; transform:none; transition-delay: 0.1s; }
-.stagger.visible > *:nth-child(3) { opacity:1; transform:none; transition-delay: 0.2s; }
-.stagger.visible > *:nth-child(4) { opacity:1; transform:none; transition-delay: 0.3s; }
-.stagger.visible > *:nth-child(5) { opacity:1; transform:none; transition-delay: 0.4s; }
-.stagger.visible > *:nth-child(6) { opacity:1; transform:none; transition-delay: 0.5s; }
+.stagger.visible > * { opacity: 1; transform: none; }
+.stagger.visible > *:nth-child(1) { transition-delay: 0s; }
+.stagger.visible > *:nth-child(2) { transition-delay: 0.07s; }
+.stagger.visible > *:nth-child(3) { transition-delay: 0.14s; }
+.stagger.visible > *:nth-child(4) { transition-delay: 0.21s; }
+.stagger.visible > *:nth-child(5) { transition-delay: 0.28s; }
+.stagger.visible > *:nth-child(6) { transition-delay: 0.35s; }
+.stagger.visible > *:nth-child(n+7) { transition-delay: 0.4s; }
 
 /* ── ABOUT ── */
 #about { background: var(--cream); overflow: hidden; }
@@ -700,7 +702,7 @@ footer {
   <a href="#hero" class="nav-logo">Sophienoheya</a>
   <ul class="nav-links">
     <li><a href="#about">關於我</a></li>
-    <li><a href="#works">作品集</a></li>
+    <li><a href="works.html">作品集</a></li>
     <li><a href="#shop">周邊</a></li>
     <li><a href="#contact">聯絡</a></li>
   </ul>
@@ -779,10 +781,7 @@ footer {
         <span class="section-label">Portfolio</span>
         <h2 class="section-title">作品集<br><strong>點擊查看故事</strong></h2>
       </div>
-      <div class="works-tabs">
-        <button class="tab-btn active" onclick="switchTab('illustration', this)">插畫</button>
-        <button class="tab-btn" onclick="switchTab('video', this)">影片</button>
-      </div>
+      <a href="works.html" class="btn-outline">查看全部作品 →</a>
     </div>
 
     <div id="tab-illustration" class="works-panel active">
@@ -791,6 +790,10 @@ footer {
 
     <div id="tab-video" class="works-panel">
       <div class="video-grid stagger" id="video-grid"></div>
+    </div>
+
+    <div class="reveal" style="text-align:center;margin-top:48px;">
+      <a href="works.html" class="btn-outline">查看全部作品 →</a>
     </div>
   </div>
 </section>
@@ -1007,7 +1010,9 @@ function renderWorksGrid(works) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px;color:var(--text-light);font-size:13px;letter-spacing:0.1em;">作品陸續更新中 ✦</div>';
     return;
   }
-  works.forEach((w, i) => {
+  // 首頁只顯示前 6 張
+  const preview = works.slice(0, 6);
+  preview.forEach((w, i) => {
     const card = document.createElement('div');
     card.className = 'work-card';
     card.onclick = () => openLightbox(i);
