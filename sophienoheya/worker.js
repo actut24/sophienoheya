@@ -1,5 +1,6 @@
 const ADMIN_PASSWORD_KEY = 'admin_password';
 const WORKS_KEY = 'works';
+const VIDEOS_KEY = 'videos';
 const DEFAULT_PASSWORD = 'sophienoheya2024';
 
 const CORS = {
@@ -27,19 +28,23 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS });
     }
 
-    // GET /api/works — 公開，前台讀取作品
+    // GET /api/works
     if (request.method === 'GET' && path === '/api/works') {
       const data = await env.SOPHIE_DATA.get(WORKS_KEY);
-      const works = data ? JSON.parse(data) : [];
-      return json(works);
+      return json(data ? JSON.parse(data) : []);
     }
 
-    // POST /api/login — 驗證密碼，回傳 token
+    // GET /api/videos
+    if (request.method === 'GET' && path === '/api/videos') {
+      const data = await env.SOPHIE_DATA.get(VIDEOS_KEY);
+      return json(data ? JSON.parse(data) : []);
+    }
+
+    // POST /api/login
     if (request.method === 'POST' && path === '/api/login') {
       const body = await request.json();
       const storedPw = (await env.SOPHIE_DATA.get(ADMIN_PASSWORD_KEY)) || DEFAULT_PASSWORD;
@@ -49,7 +54,7 @@ export default {
       return json({ ok: false }, 401);
     }
 
-    // POST /api/works — 需要驗證，後台儲存作品
+    // POST /api/works
     if (request.method === 'POST' && path === '/api/works') {
       if (!(await verifyAuth(request, env))) return json({ error: 'Unauthorized' }, 401);
       const body = await request.json();
@@ -57,7 +62,15 @@ export default {
       return json({ ok: true });
     }
 
-    // POST /api/password — 需要驗證，變更密碼
+    // POST /api/videos
+    if (request.method === 'POST' && path === '/api/videos') {
+      if (!(await verifyAuth(request, env))) return json({ error: 'Unauthorized' }, 401);
+      const body = await request.json();
+      await env.SOPHIE_DATA.put(VIDEOS_KEY, JSON.stringify(body));
+      return json({ ok: true });
+    }
+
+    // POST /api/password
     if (request.method === 'POST' && path === '/api/password') {
       if (!(await verifyAuth(request, env))) return json({ error: 'Unauthorized' }, 401);
       const body = await request.json();
@@ -66,7 +79,6 @@ export default {
       return json({ ok: true });
     }
 
-    // 其他路徑交給靜態檔案
     return env.ASSETS.fetch(request);
   },
 };
