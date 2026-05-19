@@ -30,7 +30,7 @@ body {
   background: var(--white);
   color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.8;
   overflow-x: hidden;
   cursor: none;
@@ -179,7 +179,7 @@ nav.scrolled .nav-links { opacity: 1; transform: translateY(0); }
   font-family: 'Noto Serif TC', serif;
   font-size: clamp(13px, 1.5vw, 16px);
   color: rgba(255,255,255,0.7); letter-spacing: 0.2em;
-  margin-top: 24px; font-weight: 200;
+  margin-top: 24px; font-weight: 400;
   opacity: 0; transform: translateY(20px);
   animation: fadeUp 1s 0.8s ease both;
 }
@@ -219,10 +219,15 @@ section { padding: 120px 0; }
 .section-title {
   font-family: 'Noto Serif TC', serif;
   font-size: clamp(26px, 4vw, 44px);
-  font-weight: 200; color: var(--text);
+  font-weight: 400; color: var(--text);
   letter-spacing: 0.06em; line-height: 1.2;
 }
-.section-title strong { color: var(--gold); font-weight: 300; }
+.section-title strong {
+  display: block;
+  font-size: clamp(11px, 1vw, 13px);
+  color: var(--gold); font-weight: 400;
+  letter-spacing: 0.15em; margin-top: 6px;
+}
 
 /* reveal on scroll */
 .reveal {
@@ -295,13 +300,11 @@ section { padding: 120px 0; }
 .about-title {
   font-family: 'Noto Serif TC', serif;
   font-size: clamp(22px, 3vw, 34px);
-  font-weight: 200; color: var(--text);
+  font-weight: 400; color: var(--text);
   line-height: 1.4; letter-spacing: 0.06em;
   margin-bottom: 28px;
 }
 .about-title span { color: var(--gold); }
-
-.about-para {
   font-size: 14px; color: var(--text-muted);
   line-height: 2.1; margin-bottom: 18px;
 }
@@ -613,7 +616,7 @@ footer {
 }
 .lightbox-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: 26px; font-weight: 200; color: var(--text);
+  font-size: 26px; font-weight: 400; color: var(--text);
   letter-spacing: 0.08em; line-height: 1.3; margin-bottom: 28px;
 }
 .lightbox-text {
@@ -662,7 +665,7 @@ footer {
 }
 .video-lightbox-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: 17px; color: white; font-weight: 200;
+  font-size: 17px; color: white; font-weight: 400;
 }
 .video-lightbox-year { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; }
 .video-lightbox-close {
