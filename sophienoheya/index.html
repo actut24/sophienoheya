@@ -990,7 +990,7 @@ function switchTab(name, btn) {
 async function initPortfolio() {
   let works = [], videos = [];
   try {
-    const [wRes, vRes] = await Promise.all([fetch('/api/works'), fetch('/api/videos')]);
+    const [wRes, vRes] = await Promise.all([fetch('https://sophienoheya-api.actut24.workers.dev/api/works'), fetch('https://sophienoheya-api.actut24.workers.dev/api/videos')]);
     works = await wRes.json();
     videos = await vRes.json();
   } catch {}
