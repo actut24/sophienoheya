@@ -242,6 +242,7 @@ body { background: #f0ece6; font-family: 'Noto Sans TC', sans-serif; font-weight
     <div class="admin-logo">Sophienoheya <span>後台</span></div>
     <div class="admin-tabs">
       <button class="admin-tab active" onclick="showPanel('works', this)">插畫作品</button>
+      <button class="admin-tab" onclick="showPanel('videos', this)">影片作品</button>
       <button class="admin-tab" onclick="showPanel('assets', this)">素材庫</button>
       <button class="admin-tab" onclick="showPanel('settings', this)">設定</button>
     </div>
@@ -257,6 +258,16 @@ body { background: #f0ece6; font-family: 'Noto Sans TC', sans-serif; font-weight
         <button class="add-btn" onclick="openModal()">＋ 新增作品</button>
       </div>
       <div class="works-list" id="works-list"></div>
+    </div>
+
+    <!-- VIDEOS PANEL -->
+    <div class="panel" id="panel-videos">
+      <div class="panel-header">
+        <h2 class="panel-title">影片作品管理</h2>
+        <button class="add-btn" onclick="openVideoModal()">＋ 新增影片</button>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">貼上 YouTube 網址，會自動抓取縮圖。</p>
+      <div class="works-list" id="videos-list"></div>
     </div>
 
     <!-- ASSETS PANEL -->
@@ -339,6 +350,43 @@ body { background: #f0ece6; font-family: 'Noto Sans TC', sans-serif; font-weight
   </div>
 </div>
 
+<!-- VIDEO MODAL -->
+<div class="modal-overlay" id="video-modal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-head">
+      <div class="modal-title" id="vmodal-title">新增影片</div>
+      <button class="modal-close" onclick="closeVideoModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>YouTube 網址</label>
+        <input type="text" id="vf-url" placeholder="https://www.youtube.com/watch?v=..." oninput="previewYT()">
+      </div>
+      <div id="yt-preview" style="display:none;margin-bottom:16px;">
+        <img id="yt-thumb" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>標題</label>
+          <input type="text" id="vf-title" placeholder="影片名稱">
+        </div>
+        <div class="field">
+          <label>年份</label>
+          <input type="text" id="vf-year" placeholder="2024">
+        </div>
+      </div>
+      <div class="field">
+        <label>類別（選填）</label>
+        <input type="text" id="vf-tags" placeholder="例：展覽紀錄、宣傳影片">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-btn" onclick="closeVideoModal()">取消</button>
+      <button class="save-btn" onclick="saveVideo()">儲存影片</button>
+    </div>
+  </div>
+</div>
+
 <!-- ASSET UPLOAD MODAL -->
 <div class="modal-overlay" id="asset-modal">
   <div class="modal-box" style="max-width:480px">
@@ -365,39 +413,60 @@ body { background: #f0ece6; font-family: 'Noto Sans TC', sans-serif; font-weight
 <script>
 const CLOUD_NAME = 'dgru0usxn';
 const UPLOAD_PRESET = 'sophienoheya';
-const STORAGE_KEY = 'sophie_works';
-const PW_KEY = 'sophie_admin_pw';
 const ASSETS_KEY = 'sophie_assets';
-const DEFAULT_PW = 'sophienoheya2024';
+let AUTH_TOKEN = '';
+let cachedWorks = [];
 
 // ── AUTH ──
-function doLogin() {
+async function doLogin() {
   const pw = document.getElementById('pw-input').value;
-  const stored = localStorage.getItem(PW_KEY) || DEFAULT_PW;
-  if (pw === stored) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-screen').style.display = 'block';
-    renderWorks();
-    renderAssets();
-  } else {
+  try {
+    const res = await fetch('https://sophienoheya-api.actut24.workers.dev/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      AUTH_TOKEN = data.token;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block';
+      await renderWorks();
+      await renderVideos();
+      renderAssets();
+    } else {
+      document.getElementById('login-err').style.display = 'block';
+      document.getElementById('pw-input').value = '';
+    }
+  } catch {
+    document.getElementById('login-err').textContent = '連線失敗，請重試';
     document.getElementById('login-err').style.display = 'block';
-    document.getElementById('pw-input').value = '';
   }
 }
+
 function doLogout() {
+  AUTH_TOKEN = '';
   document.getElementById('admin-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('pw-input').value = '';
 }
-function changePw() {
+
+async function changePw() {
   const a = document.getElementById('new-pw').value;
   const b = document.getElementById('new-pw2').value;
   if (!a) return showToast('請輸入新密碼', 'error');
   if (a !== b) return showToast('兩次密碼不一致', 'error');
-  localStorage.setItem(PW_KEY, a);
-  showToast('密碼已更新 ✓', 'success');
-  document.getElementById('new-pw').value = '';
-  document.getElementById('new-pw2').value = '';
+  const res = await fetch('https://sophienoheya-api.actut24.workers.dev/api/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN },
+    body: JSON.stringify({ newPassword: a })
+  });
+  if (res.ok) {
+    AUTH_TOKEN = a;
+    showToast('密碼已更新 ✓', 'success');
+    document.getElementById('new-pw').value = '';
+    document.getElementById('new-pw2').value = '';
+  } else showToast('更新失敗', 'error');
 }
 
 // ── PANELS ──
@@ -408,26 +477,39 @@ function showPanel(name, btn) {
   btn.classList.add('active');
 }
 
-// ── STORAGE ──
-function loadWorks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+// ── API WORKS ──
+async function loadWorks() {
+  try {
+    const res = await fetch('https://sophienoheya-api.actut24.workers.dev/api/works', { headers: { 'Authorization': 'Bearer ' + AUTH_TOKEN } });
+    cachedWorks = await res.json();
+    return cachedWorks;
+  } catch { return cachedWorks; }
 }
-function saveWorks(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+async function saveWorksAPI(arr) {
+  cachedWorks = arr;
+  await fetch('https://sophienoheya-api.actut24.workers.dev/api/works', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN },
+    body: JSON.stringify(arr)
+  });
+}
+
 function loadAssets() {
   try { return JSON.parse(localStorage.getItem(ASSETS_KEY)) || []; } catch { return []; }
 }
 function saveAssets(arr) { localStorage.setItem(ASSETS_KEY, JSON.stringify(arr)); }
 
 // ── RENDER WORKS ──
-function renderWorks() {
-  const works = loadWorks();
+async function renderWorks() {
   const list = document.getElementById('works-list');
+  list.innerHTML = '<div class="empty-state"><div class="icon">⏳</div>載入中…</div>';
+  const works = await loadWorks();
   if (!works.length) {
     list.innerHTML = `<div class="empty-state"><div class="icon">🎨</div>還沒有作品，點擊「新增作品」開始吧！</div>`;
     return;
   }
   list.innerHTML = works.map((w, i) => `
-    <div class="work-item" data-idx="${i}">
+    <div class="work-item" data-idx="${i}" draggable="true">
       <div class="drag-handle" title="拖曳排序">⠿</div>
       <div class="work-thumb">
         ${w.img ? `<img src="${w.img}" alt="${w.title}">` : '無圖片'}
@@ -450,7 +532,7 @@ let uploadedImgUrl = '';
 function openModal(idx = null) {
   editIdx = idx;
   uploadedImgUrl = '';
-  const works = loadWorks();
+  const works = cachedWorks;
   const w = idx !== null ? works[idx] : null;
   document.getElementById('modal-mode-title').textContent = idx !== null ? '編輯作品' : '新增作品';
   document.getElementById('f-title').value = w?.title || '';
@@ -487,7 +569,7 @@ function addStoryField(val = '') {
   document.getElementById('story-list').appendChild(row);
 }
 
-function saveWork() {
+async function saveWork() {
   const title = document.getElementById('f-title').value.trim();
   if (!title) return showToast('請填入作品名稱', 'error');
   const stories = [...document.querySelectorAll('#story-list textarea')]
@@ -499,21 +581,25 @@ function saveWork() {
     img: uploadedImgUrl || document.getElementById('f-img').value.trim(),
     story: stories
   };
-  const works = loadWorks();
+  const works = [...cachedWorks];
   if (editIdx !== null) works[editIdx] = work;
   else works.push(work);
-  saveWorks(works);
+  document.getElementById('save-btn').disabled = true;
+  document.getElementById('save-btn').textContent = '儲存中…';
+  await saveWorksAPI(works);
+  document.getElementById('save-btn').disabled = false;
+  document.getElementById('save-btn').textContent = '儲存作品';
   closeModal();
-  renderWorks();
+  await renderWorks();
   showToast(editIdx !== null ? '作品已更新 ✓' : '作品已新增 ✓', 'success');
 }
 
-function deleteWork(idx) {
+async function deleteWork(idx) {
   if (!confirm('確定要刪除這件作品嗎？')) return;
-  const works = loadWorks();
+  const works = [...cachedWorks];
   works.splice(idx, 1);
-  saveWorks(works);
-  renderWorks();
+  await saveWorksAPI(works);
+  await renderWorks();
   showToast('作品已刪除', '');
 }
 
@@ -632,10 +718,118 @@ function deleteAsset(idx) {
   renderAssets();
 }
 
+// ── VIDEOS ──
+let cachedVideos = [];
+let videoEditIdx = null;
+
+async function loadVideos() {
+  try {
+    const res = await fetch('https://sophienoheya-api.actut24.workers.dev/api/videos', { headers: { 'Authorization': 'Bearer ' + AUTH_TOKEN } });
+    cachedVideos = await res.json();
+    return cachedVideos;
+  } catch { return cachedVideos; }
+}
+async function saveVideosAPI(arr) {
+  cachedVideos = arr;
+  await fetch('https://sophienoheya-api.actut24.workers.dev/api/videos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN },
+    body: JSON.stringify(arr)
+  });
+}
+
+function getYouTubeId(url) {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+async function renderVideos() {
+  const list = document.getElementById('videos-list');
+  list.innerHTML = '<div class="empty-state"><div class="icon">⏳</div>載入中…</div>';
+  const videos = await loadVideos();
+  if (!videos.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🎬</div>還沒有影片，點擊「新增影片」開始吧！</div>`;
+    return;
+  }
+  list.innerHTML = videos.map((v, i) => {
+    const ytId = getYouTubeId(v.url || '');
+    const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : '';
+    return `
+    <div class="work-item" data-vidx="${i}">
+      <div class="work-thumb" style="background:${thumb ? 'none' : 'var(--cream-dark)'};overflow:hidden;">
+        ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;">` : '無縮圖'}
+      </div>
+      <div class="work-info">
+        <div class="work-item-title">${v.title || '(未命名)'}</div>
+        <div class="work-item-meta">${v.year || ''} ${v.tags ? '· ' + v.tags : ''}</div>
+      </div>
+      <div class="work-actions">
+        <button class="edit-btn" onclick="openVideoModal(${i})">編輯</button>
+        <button class="del-btn" onclick="deleteVideo(${i})">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openVideoModal(idx = null) {
+  videoEditIdx = idx;
+  const v = idx !== null ? cachedVideos[idx] : null;
+  document.getElementById('vmodal-title').textContent = idx !== null ? '編輯影片' : '新增影片';
+  document.getElementById('vf-url').value = v?.url || '';
+  document.getElementById('vf-title').value = v?.title || '';
+  document.getElementById('vf-year').value = v?.year || new Date().getFullYear();
+  document.getElementById('vf-tags').value = v?.tags || '';
+  previewYT();
+  document.getElementById('video-modal').classList.add('open');
+}
+function closeVideoModal() { document.getElementById('video-modal').classList.remove('open'); }
+
+function previewYT() {
+  const url = document.getElementById('vf-url').value;
+  const ytId = getYouTubeId(url);
+  const preview = document.getElementById('yt-preview');
+  if (ytId) {
+    document.getElementById('yt-thumb').src = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function saveVideo() {
+  const url = document.getElementById('vf-url').value.trim();
+  const title = document.getElementById('vf-title').value.trim();
+  if (!url) return showToast('請填入 YouTube 網址', 'error');
+  if (!getYouTubeId(url)) return showToast('網址格式不正確', 'error');
+  if (!title) return showToast('請填入影片標題', 'error');
+  const video = {
+    url, title,
+    year: document.getElementById('vf-year').value.trim(),
+    tags: document.getElementById('vf-tags').value.trim()
+  };
+  const videos = [...cachedVideos];
+  if (videoEditIdx !== null) videos[videoEditIdx] = video;
+  else videos.push(video);
+  await saveVideosAPI(videos);
+  closeVideoModal();
+  await renderVideos();
+  showToast(videoEditIdx !== null ? '影片已更新 ✓' : '影片已新增 ✓', 'success');
+}
+
+async function deleteVideo(idx) {
+  if (!confirm('確定要刪除這部影片嗎？')) return;
+  const videos = [...cachedVideos];
+  videos.splice(idx, 1);
+  await saveVideosAPI(videos);
+  await renderVideos();
+  showToast('影片已刪除', '');
+}
+
+document.getElementById('video-modal').addEventListener('click', function(e) { if (e.target === this) closeVideoModal(); });
+
 // ── EXPORT ──
 function exportData() {
-  const works = loadWorks();
-  const json = JSON.stringify(works, null, 2);
+  const json = JSON.stringify(cachedWorks, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -658,9 +852,9 @@ function showToast(msg, type = '') {
 let dragSrc = null;
 document.getElementById('works-list').addEventListener('dragstart', e => {
   dragSrc = e.target.closest('.work-item');
-  dragSrc.style.opacity = '0.5';
+  if (dragSrc) dragSrc.style.opacity = '0.5';
 });
-document.getElementById('works-list').addEventListener('dragend', e => {
+document.getElementById('works-list').addEventListener('dragend', () => {
   document.querySelectorAll('.work-item').forEach(el => el.style.opacity = '');
 });
 document.getElementById('works-list').addEventListener('dragover', e => {
@@ -672,15 +866,14 @@ document.getElementById('works-list').addEventListener('dragover', e => {
     target.parentNode.insertBefore(dragSrc, before ? target : target.nextSibling);
   }
 });
-document.getElementById('works-list').addEventListener('drop', e => {
+document.getElementById('works-list').addEventListener('drop', async e => {
   e.preventDefault();
   const items = [...document.querySelectorAll('.work-item')].map(el => parseInt(el.dataset.idx));
-  const works = loadWorks();
-  const reordered = items.map(i => works[i]);
-  saveWorks(reordered);
-  renderWorks();
+  const reordered = items.map(i => cachedWorks[i]);
+  await saveWorksAPI(reordered);
+  await renderWorks();
+  showToast('順序已儲存 ✓', 'success');
 });
-document.querySelectorAll('.work-item').forEach(el => el.draggable = true);
 
 // Close modal on overlay click
 document.getElementById('work-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
