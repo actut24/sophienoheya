@@ -711,14 +711,6 @@ footer {
   <div class="hero-bg" id="hero-bg"></div>
   <div class="hero-bg-overlay"></div>
 
-  <!-- floating orbs -->
-  <div class="hero-orb hero-orb-1" id="orb1">
-    <img src="https://res.cloudinary.com/dgru0usxn/image/upload/v1778666999/uqccfgolgkp9rmff0n8s.png" alt="">
-  </div>
-  <div class="hero-orb hero-orb-2" id="orb2">
-    <img src="https://res.cloudinary.com/dgru0usxn/image/upload/v1778666706/dw1x30wp9olpfzrzwhvo.png" alt="">
-  </div>
-
   <div class="hero-content" id="hero-content">
     <div class="hero-eyebrow">插畫創作者 · 平面設計 · Taiwan</div>
     <h1 class="hero-name">
@@ -936,11 +928,8 @@ animateCursor();
 // ── HERO MOUSE PARALLAX ──
 const heroBg = document.getElementById('hero-bg');
 const heroContent = document.getElementById('hero-content');
-const orb1 = document.getElementById('orb1');
-const orb2 = document.getElementById('orb2');
 let heroActive = true;
 
-// smooth mouse target
 let hx = 0, hy = 0, thx = 0, thy = 0;
 document.addEventListener('mousemove', e => {
   if (!heroActive) return;
@@ -951,13 +940,8 @@ document.addEventListener('mousemove', e => {
 function animateHero() {
   hx += (thx - hx) * 0.06;
   hy += (thy - hy) * 0.06;
-  // background moves opposite, subtle
   heroBg.style.transform = `translate(${hx * -18}px, ${hy * -14}px)`;
-  // text moves with mouse, very subtle
   heroContent.style.transform = `translate(${hx * 8}px, ${hy * 6}px)`;
-  // orbs move more dramatically
-  orb1.style.transform = `translate(${hx * -28}px, ${hy * -20}px)`;
-  orb2.style.transform = `translate(${hx * 22}px, ${hy * 16}px)`;
   requestAnimationFrame(animateHero);
 }
 animateHero();
