@@ -987,27 +987,6 @@ function switchTab(name, btn) {
 }
 
 // ── WORKS DATA ──
-const FALLBACK_WORKS = [
-  {
-    title: '紅髮雙魚',
-    year: '2024', tags: '玄之又玄',
-    img: 'https://res.cloudinary.com/dgru0usxn/image/upload/v1779173919/%E7%B4%85%E9%AB%AE%E9%9B%99%E9%AD%9A_1200_kydytc.png',
-    story: ['在此填入這幅作品的背後故事。']
-  },
-  {
-    title: '作品二',
-    year: '2024', tags: '系列',
-    img: 'https://res.cloudinary.com/dgru0usxn/image/upload/v1778666706/dw1x30wp9olpfzrzwhvo.png',
-    story: ['在此填入這幅作品的背後故事。']
-  },
-  {
-    title: '作品三',
-    year: '2023', tags: '系列',
-    img: 'https://res.cloudinary.com/dgru0usxn/image/upload/v1778666999/uqccfgolgkp9rmff0n8s.png',
-    story: ['在此填入這幅作品的背後故事。']
-  },
-];
-
 async function initPortfolio() {
   let works = [], videos = [];
   try {
@@ -1015,7 +994,7 @@ async function initPortfolio() {
     works = await wRes.json();
     videos = await vRes.json();
   } catch {}
-  renderWorksGrid(works.length ? works : FALLBACK_WORKS);
+  renderWorksGrid(works);
   renderVideoGrid(videos);
 }
 
